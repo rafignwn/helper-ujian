@@ -1,4 +1,5 @@
-Dim conn As New ADODB.Connection
+Public IdUser As Integer
+Dim Conn As New ADODB.Connection
 Dim rs As New ADODB.Recordset
 
 Dim countShowItem As Integer
@@ -12,6 +13,8 @@ Dim leftLblNama As Integer
 Dim leftLblQty As Integer
 Dim leftLblHarga As Integer
 Dim leftLblTotalHarga As Integer
+Dim idTransaksi As Integer
+Dim selectedIdItem As Integer
 
 Dim lblTextTotal As Label
 Dim lblTotal As Label
@@ -21,6 +24,22 @@ Dim lblKembalian As Label
 Dim lblTextKembalian As Label
 
 Dim koleksiLabel As Collection
+Dim koleksiIdItem As Collection
+
+Public Sub insertTransaksi()
+    If idTransaksi = 0 Then
+        Conn.Execute "INSERT INTO tb_transaksi (id_user, tanggal) VALUES (" & IdUser & ", '" & DateTime.Now & "')"
+        
+        Set rs = New ADODB.Recordset
+        rs.Open "SELECT id FROM tb_transaksi ORDER BY id DESC", Conn
+        idTransaksi = rs("id").Value
+        
+        Conn.Execute "INSERT INTO tb_detail_transaksi (id_transaksi, id_barang, qty, total) VALUES (" & idTransaksi & ", " & selectedIdItem & ", " & Val(txtQty.Text) & ", " & (Val(txtQty) * CDbl(harga)) & ")"
+    Else
+        Conn.Execute "INSERT INTO tb_detail_transaksi (id_transaksi, id_barang, qty, total) VALUES (" & idTransaksi & ", " & selectedIdItem & ", " & Val(txtQty.Text) & ", " & (Val(txtQty) * CDbl(harga)) & ")"
+    End If
+End Sub
+
 
 Private Sub tambahDaftarBarang(capNama As String, capQty As String, capHarga As Double)
     If countShowItem < countItem Then
@@ -246,6 +265,8 @@ Private Sub cmdHitung_Click()
             .Top = lblTextTunai.Top + 400
         End With
     End If
+    
+    Conn.Execute "UPDATE tb_transaksi SET tunai = " & Val(txtTunai) & ", kembalian = " & CDbl(txtTunai) - totalHarga & " WHERE id = " & idTransaksi
     txtTunai.Text = ""
 End Sub
 
@@ -260,6 +281,8 @@ Private Sub cmdReset_Click()
     lblTotal.Visible = False
     countShowItem = 0
     totalHarga = 0
+    selectedIdItem = 0
+    idTransaksi = 0
     lineBelanja1.Visible = False
     txtTunai.Text = ""
     lblTextTunai.Visible = False
@@ -279,6 +302,7 @@ End Sub
 Private Sub cmdTambah_Click()
     totalHarga = totalHarga + (harga * CDbl(txtQty.Text))
     tambahDaftarBarang comboBarang.Text, txtQty.Text, CDbl(harga)
+    insertTransaksi
     clear
     txtTunai.SetFocus
 End Sub
@@ -287,25 +311,42 @@ Private Sub comboBarang_Click()
     txtQty.Text = ""
     comboBarang.Text = comboBarang.List(comboBarang.ListIndex)
     harga = CDbl(comboBarang.ItemData(comboBarang.ListIndex))
+    selectedIdItem = koleksiIdItem("id" & comboBarang.ListIndex)
     txtHarga = FormatCurrency(harga)
     lblBarang = comboBarang.Text
     txtQty.SetFocus
 End Sub
 
+Private Sub cmdCetak_Click()
+    adodcReport.ConnectionString = Conn
+    adodcReport.CommandType = adCmdText
+    adodcReport.RecordSource = "SELECT tb_barang.nama_barang, tb_barang.harga, tb_detail_transaksi.qty, tb_detail_transaksi.total, tb_transaksi.tunai, tb_transaksi.kembalian, tb_transaksi.tanggal FROM tb_transaksi INNER JOIN (tb_detail_transaksi INNER JOIN tb_barang ON tb_detail_transaksi.id_barang = tb_barang.id) ON tb_transaksi.id = tb_detail_transaksi.id_transaksi WHERE tb_transaksi.id = " & idTransaksi
+    adodcReport.Refresh
+    
+    Set strukPembelian.DataSource = adodcReport
+    strukPembelian.Show
+End Sub
+
+Private Sub Command1_Click()
+    Conn.Execute "INSERT INTO users (nama, username, password) VALUES ('Mimin Try', 'mimin', '1234')"
+End Sub
+
 Private Sub Form_Load()
     ' membuka koneksi ke database
-    conn.Open "Provider=Microsoft.Jet.OLEDB.4.0; Persist security info=false; Data Source=D:\vb-uye\Prasmanan\Database1.mdb"
+    Conn.Open "Provider=Microsoft.Jet.OLEDB.4.0; Persist security info=false; Data Source=D:\vb-uye\Prasmanan\Database1.mdb"
     
     ' mengambil data paket londri outlet
     Set rs = New ADODB.Recordset
     ' query untuk mengambil data dari tabel paket, by id outlet
-    rs.Open "SELECT * FROM tb_barang", conn
+    rs.Open "SELECT * FROM tb_barang", Conn
         
     ' mengisi item combo box dengan data paket yang sudah diambil
+    Set koleksiIdItem = New Collection
     Set comboBarang.DataSource = rs
     While Not rs.EOF
         comboBarang.AddItem rs("nama_barang").Value
         comboBarang.ItemData(comboBarang.NewIndex) = rs("harga").Value
+        koleksiIdItem.Add rs("id").Value, "id" & comboBarang.NewIndex
         rs.MoveNext
     Wend
     
@@ -315,10 +356,15 @@ Private Sub Form_Load()
     countShowItem = 0
     itemTop = 2590
     totalHarga = 0
+    idTransaksi = 0
     Set koleksiLabel = New Collection
     
     leftLblNama = 6240
     leftLblQty = 9000
     leftLblHarga = 9840
     leftLblTotalHarga = 12120
+End Sub
+
+Private Sub menu_data_user_Click()
+    FormPengguna.Show
 End Sub
