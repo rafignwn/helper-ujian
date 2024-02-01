@@ -1,7 +1,7 @@
 Dim IdUser As Integer
 Dim Conn As New ADODB.Connection
 
-Private Sub cmdGadulu_Click(Index As Integer)
+Private Sub cmdGadulu_Click()
     ClearForm
 End Sub
 
@@ -35,7 +35,7 @@ Private Function pesanBerhasil(pesan As String)
     ClearForm
 End Function
 
-Private Sub cmdHapus_Click(Index As Integer)
+Private Sub cmdHapus_Click()
     If IdUser = 0 Then
         MsgBox "Silahkan Pilih Data Yang Ingin Dihapus pada Tabel Data!", vbInformation, "Informasi"
     Else
@@ -45,7 +45,7 @@ Private Sub cmdHapus_Click(Index As Integer)
     End If
 End Sub
 
-Private Sub cmdTambah_Click(Index As Integer)
+Private Sub cmdTambah_Click()
     If IdUser = 0 Then
         If adaYangKosong And passwordKosong Then
             pesanKosong
@@ -59,7 +59,7 @@ Private Sub cmdTambah_Click(Index As Integer)
     End If
 End Sub
 
-Private Sub cmdUpdate_Click(Index As Integer)
+Private Sub cmdUpdate_Click()
     If Not IdUser = 0 Then
         If adaYangKosong Then
             pesanKosong
