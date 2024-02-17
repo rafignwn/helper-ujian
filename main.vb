@@ -63,6 +63,7 @@ Private Sub tambahDaftarBarang(capNama As String, capQty As String, capHarga As 
             .Caption = FormatCurrency(capHarga * CDbl(capQty))
         End With
         
+        Dim totTop As Integer
         totTop = koleksiLabel("lblNama" & countShowItem).Top + koleksiLabel("lblNama" & countShowItem).Height + 400
         lineBelanja1.Y1 = totTop
         lineBelanja1.Y2 = totTop
@@ -135,6 +136,9 @@ Private Sub tambahDaftarBarang(capNama As String, capQty As String, capHarga As 
             .Width = 2200
         End With
         
+        Dim itemTotTop As Integer
+        Dim itemLineTop As Integer
+        
         itemTotTop = itemTop + 900
         itemLineTop = itemTop + 700
         If countItem = 0 Then
@@ -186,91 +190,105 @@ Private Sub tambahDaftarBarang(capNama As String, capQty As String, capHarga As 
 End Sub
 
 Private Sub cmdHitung_Click()
-    If lblTunai Is Nothing Then
-        Set lblTextTunai = Controls.Add("VB.Label", "lblTextTunai")
-        Set lblTunai = Controls.Add("VB.Label", "lblTunai")
+    If Not idTransaksi = 0 And Not txtTunai.Text = "" Then
+        If lblTunai Is Nothing Then
+            Set lblTextTunai = Controls.Add("VB.Label", "lblTextTunai")
+            Set lblTunai = Controls.Add("VB.Label", "lblTunai")
+            
+            Set lblTextKembalian = Controls.Add("VB.Label", "lblTextKembalian")
+            Set lblKembalian = Controls.Add("VB.Label", "lblKembalian")
+            
+            With lblTextTunai
+                .Caption = "TUNAI"
+                .FontBold = True
+                .FontName = "OCR-A BT"
+                .FontSize = 10
+                .Left = 6240
+                .Width = 3135
+                .Height = 300
+                .Visible = True
+                .Top = lblTextTotal.Top + 400
+            End With
+            
+            With lblTunai
+                .Caption = FormatCurrency(txtTunai.Text)
+                .FontBold = True
+                .FontName = "OCR-A BT"
+                .FontSize = 10
+                .Left = leftLblTotalHarga
+                .Width = 2200
+                .Height = 300
+                .Visible = True
+                .Top = lblTextTotal.Top + 400
+            End With
+            
+            With lblTextKembalian
+                .Caption = "KEMBALIAN"
+                .FontBold = True
+                .FontName = "OCR-A BT"
+                .FontSize = 10
+                .Left = 6240
+                .Width = 3135
+                .Height = 300
+                .Visible = True
+                .Top = lblTextTunai.Top + 400
+            End With
+            
+            Dim kembalian As Double
+            kembalian = CDbl(txtTunai.Text) - totalHarga
+            With lblKembalian
+                .Caption = FormatCurrency(kembalian)
+                .FontBold = True
+                .FontName = "OCR-A BT"
+                .FontSize = 10
+                .Left = leftLblTotalHarga
+                .Width = 2200
+                .Height = 300
+                .Visible = True
+                .Top = lblTextTunai.Top + 400
+            End With
+        Else
+            With lblTextTunai
+                .Visible = True
+                .Top = lblTextTotal.Top + 400
+            End With
+            
+            With lblTunai
+                .Caption = FormatCurrency(txtTunai.Text)
+                .Visible = True
+                .Top = lblTextTotal.Top + 400
+            End With
+            
+            With lblTextKembalian
+                .Visible = True
+                .Top = lblTextTunai.Top + 400
+            End With
+            
+            kembalian = CDbl(txtTunai.Text) - totalHarga
+            With lblKembalian
+                .Caption = FormatCurrency(kembalian)
+                .Visible = True
+                .Top = lblTextTunai.Top + 400
+            End With
+        End If
         
-        Set lblTextKembalian = Controls.Add("VB.Label", "lblTextKembalian")
-        Set lblKembalian = Controls.Add("VB.Label", "lblKembalian")
-        
-        With lblTextTunai
-            .Caption = "TUNAI"
-            .FontBold = True
-            .FontName = "OCR-A BT"
-            .FontSize = 10
-            .Left = 6240
-            .Width = 3135
-            .Height = 300
-            .Visible = True
-            .Top = lblTextTotal.Top + 400
-        End With
-        
-        With lblTunai
-            .Caption = FormatCurrency(txtTunai.Text)
-            .FontBold = True
-            .FontName = "OCR-A BT"
-            .FontSize = 10
-            .Left = leftLblTotalHarga
-            .Width = 2200
-            .Height = 300
-            .Visible = True
-            .Top = lblTextTotal.Top + 400
-        End With
-        
-        With lblTextKembalian
-            .Caption = "KEMBALIAN"
-            .FontBold = True
-            .FontName = "OCR-A BT"
-            .FontSize = 10
-            .Left = 6240
-            .Width = 3135
-            .Height = 300
-            .Visible = True
-            .Top = lblTextTunai.Top + 400
-        End With
-        
-        kembalian = CDbl(txtTunai.Text) - totalHarga
-        With lblKembalian
-            .Caption = FormatCurrency(kembalian)
-            .FontBold = True
-            .FontName = "OCR-A BT"
-            .FontSize = 10
-            .Left = leftLblTotalHarga
-            .Width = 2200
-            .Height = 300
-            .Visible = True
-            .Top = lblTextTunai.Top + 400
-        End With
+        Conn.Execute "UPDATE tb_transaksi SET tunai = " & Val(txtTunai) & ", kembalian = " & CDbl(txtTunai) - totalHarga & " WHERE id = " & idTransaksi
+        txtTunai.Text = ""
+        cmdCetak.Enabled = True
+        cmdHitung.Enabled = False
+        cmdTambah.Enabled = False
     Else
-        With lblTextTunai
-            .Visible = True
-            .Top = lblTextTotal.Top + 400
-        End With
-        
-        With lblTunai
-            .Caption = FormatCurrency(txtTunai.Text)
-            .Visible = True
-            .Top = lblTextTotal.Top + 400
-        End With
-        
-        With lblTextKembalian
-            .Visible = True
-            .Top = lblTextTunai.Top + 400
-        End With
-        
-        kembalian = CDbl(txtTunai.Text) - totalHarga
-        With lblKembalian
-            .Caption = FormatCurrency(kembalian)
-            .Visible = True
-            .Top = lblTextTunai.Top + 400
-        End With
+        If idTransaksi = 0 Then
+            MsgBox "Anda Belum membeli apapun!", vbInformation, "Informasi Penting"
+        Else
+            MsgBox "Silahkan masukan jumlah uang tunai terlebih dahulu", vbInformation, "Informasi"
+            txtTunai.SetFocus
+        End If
     End If
-    
-    Conn.Execute "UPDATE tb_transaksi SET tunai = " & Val(txtTunai) & ", kembalian = " & CDbl(txtTunai) - totalHarga & " WHERE id = " & idTransaksi
-    txtTunai.Text = ""
 End Sub
 
 Private Sub cmdReset_Click()
+    Dim i As Integer
     For i = countItem - 1 To 0 Step -1
         koleksiLabel("lblNama" & i).Visible = False
         koleksiLabel("lblQty" & i).Visible = False
@@ -296,15 +314,26 @@ Private Sub clear()
     txtHarga = "Rp 0"
     comboBarang.Text = "Pilih Barang"
     lblBarang = ""
+    cmdCetak.Enabled = False
+    cmdHitung.Enabled = True
+    cmdTambah.Enabled = True
     txtQty.Text = ""
 End Sub
 
 Private Sub cmdTambah_Click()
-    totalHarga = totalHarga + (harga * CDbl(txtQty.Text))
-    tambahDaftarBarang comboBarang.Text, txtQty.Text, CDbl(harga)
-    insertTransaksi
-    clear
-    txtTunai.SetFocus
+    If comboBarang.Text = "Pilih Barang" Or txtQty = "" Then
+        If comboBarang.Text = "Pilih Barang" Then
+            MsgBox "Silahkan pilih barang yang akan dibeli", vbInformation, "Informasi"
+        Else
+            MsgBox "Silahkan Masukan Jumlah Barang yang akan Dibeli", vbInformation, "Informasi"
+        End If
+    Else
+        totalHarga = totalHarga + (harga * CDbl(txtQty.Text))
+        tambahDaftarBarang comboBarang.Text, txtQty.Text, CDbl(harga)
+        insertTransaksi
+        clear
+        txtTunai.SetFocus
+    End If
 End Sub
 
 Private Sub comboBarang_Click()
@@ -325,10 +354,6 @@ Private Sub cmdCetak_Click()
     
     Set strukPembelian.DataSource = adodcReport
     strukPembelian.Show
-End Sub
-
-Private Sub Command1_Click()
-    Conn.Execute "INSERT INTO users (nama, username, password) VALUES ('Mimin Try', 'mimin', '1234')"
 End Sub
 
 Private Sub Form_Load()
@@ -363,8 +388,30 @@ Private Sub Form_Load()
     leftLblQty = 9000
     leftLblHarga = 9840
     leftLblTotalHarga = 12120
+    cmdCetak.Enabled = False
+End Sub
+
+Private Sub menu_data_barang_Click()
+    FormBarang.Show
 End Sub
 
 Private Sub menu_data_user_Click()
     FormPengguna.Show
 End Sub
+
+Private Sub txtQty_Change()
+    txtQty.Text = validasi_angka(txtQty.Text)
+End Sub
+
+Private Sub txtTunai_Change()
+    txtTunai.Text = validasi_angka(txtTunai.Text)
+End Sub
+
+Private Function validasi_angka(txt As String) As String
+    If Not IsNumeric(txt) And Not txt = "" Then
+        MsgBox "Hanya bisa dimasukan angka saja!", vbCritical, "Peringatan"
+        validasi_angka = ""
+    Else
+        validasi_angka = txt
+    End If
+End Function

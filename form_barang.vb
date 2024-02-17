@@ -72,7 +72,7 @@ Private Sub DGBarang_Click()
     txtNamaBarang.Text = CStr(DGBarang.Columns(1).Value)
     txtStok.Text = CStr(DGBarang.Columns(2).Value)
     txtHarga.Text = CStr(DGBarang.Columns(3).Value)
-    txtSuplier.Text = "" ' CStr(DGBarang.Columns(4).Value)
+    txtSuplier.Text = CStr(DGBarang.Columns(4).Value)
 End Sub
 
 Public Sub ambilDataPengguna()
