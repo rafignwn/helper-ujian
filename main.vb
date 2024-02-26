@@ -27,19 +27,25 @@ Dim koleksiLabel As Collection
 Dim koleksiIdItem As Collection
 
 Public Sub insertTransaksi()
-    If idTransaksi = 0 Then
-        Conn.Execute "INSERT INTO tb_transaksi (id_user, tanggal) VALUES (" & IdUser & ", '" & DateTime.Now & "')"
-        
-        Set rs = New ADODB.Recordset
-        rs.Open "SELECT id FROM tb_transaksi ORDER BY id DESC", Conn
-        idTransaksi = rs("id").Value
-        
-        Conn.Execute "INSERT INTO tb_detail_transaksi (id_transaksi, id_barang, qty, total) VALUES (" & idTransaksi & ", " & selectedIdItem & ", " & Val(txtQty.Text) & ", " & (Val(txtQty) * CDbl(harga)) & ")"
-    Else
-        Conn.Execute "INSERT INTO tb_detail_transaksi (id_transaksi, id_barang, qty, total) VALUES (" & idTransaksi & ", " & selectedIdItem & ", " & Val(txtQty.Text) & ", " & (Val(txtQty) * CDbl(harga)) & ")"
-    End If
+
+        If idTransaksi = 0 Then
+            Conn.Execute "INSERT INTO tb_transaksi (id_user, tanggal) VALUES (" & IdUser & ", '" & DateTime.Now & "')"
+            
+            Set rs = New ADODB.Recordset
+            rs.Open "SELECT id FROM tb_transaksi ORDER BY id DESC", Conn
+            idTransaksi = rs("id").Value
+            
+            Conn.Execute "INSERT INTO tb_detail_transaksi (id_transaksi, id_barang, qty, total) VALUES (" & idTransaksi & ", " & selectedIdItem & ", " & Val(txtQty.Text) & ", " & (Val(txtQty) * CDbl(harga)) & ")"
+            updateStok selectedIdItem, Val(txtQty.Text)
+        Else
+            Conn.Execute "INSERT INTO tb_detail_transaksi (id_transaksi, id_barang, qty, total) VALUES (" & idTransaksi & ", " & selectedIdItem & ", " & Val(txtQty.Text) & ", " & (Val(txtQty) * CDbl(harga)) & ")"
+            updateStok selectedIdItem, Val(txtQty.Text)
+        End If
 End Sub
 
+Private Function updateStok(idBarang As Integer, jumlah As Integer) 
+    Conn.Execute "UPDATE tb_barang SET stok = (stok - " & jumlah & ") WHERE id=" & idBarang
+End Function
 
 Private Sub tambahDaftarBarang(capNama As String, capQty As String, capHarga As Double)
     If countShowItem < countItem Then
@@ -153,7 +159,6 @@ Private Sub tambahDaftarBarang(capNama As String, capQty As String, capHarga As 
                 .Width = 2500
                 .Visible = True
                 .FontBold = True
-                .FontName = "OCR-A BT"
                 .FontSize = 10
             End With
             
@@ -165,7 +170,6 @@ Private Sub tambahDaftarBarang(capNama As String, capQty As String, capHarga As 
                 .Width = 2200
                 .Visible = True
                 .FontBold = True
-                .FontName = "OCR-A BT"
                 .FontSize = 10
             End With
         Else
@@ -201,7 +205,6 @@ Private Sub cmdHitung_Click()
             With lblTextTunai
                 .Caption = "TUNAI"
                 .FontBold = True
-                .FontName = "OCR-A BT"
                 .FontSize = 10
                 .Left = 6240
                 .Width = 3135
@@ -213,7 +216,6 @@ Private Sub cmdHitung_Click()
             With lblTunai
                 .Caption = FormatCurrency(txtTunai.Text)
                 .FontBold = True
-                .FontName = "OCR-A BT"
                 .FontSize = 10
                 .Left = leftLblTotalHarga
                 .Width = 2200
@@ -225,7 +227,6 @@ Private Sub cmdHitung_Click()
             With lblTextKembalian
                 .Caption = "KEMBALIAN"
                 .FontBold = True
-                .FontName = "OCR-A BT"
                 .FontSize = 10
                 .Left = 6240
                 .Width = 3135
@@ -239,7 +240,6 @@ Private Sub cmdHitung_Click()
             With lblKembalian
                 .Caption = FormatCurrency(kembalian)
                 .FontBold = True
-                .FontName = "OCR-A BT"
                 .FontSize = 10
                 .Left = leftLblTotalHarga
                 .Width = 2200
@@ -274,6 +274,7 @@ Private Sub cmdHitung_Click()
         
         Conn.Execute "UPDATE tb_transaksi SET tunai = " & Val(txtTunai) & ", kembalian = " & CDbl(txtTunai) - totalHarga & " WHERE id = " & idTransaksi
         txtTunai.Text = ""
+        cmdReset.Enabled = True
         cmdCetak.Enabled = True
         cmdHitung.Enabled = False
         cmdTambah.Enabled = False
@@ -314,10 +315,11 @@ Private Sub clear()
     txtHarga = "Rp 0"
     comboBarang.Text = "Pilih Barang"
     lblBarang = ""
+    txtQty.Text = ""
+    cmdReset.Enabled = False
     cmdCetak.Enabled = False
     cmdHitung.Enabled = True
     cmdTambah.Enabled = True
-    txtQty.Text = ""
 End Sub
 
 Private Sub cmdTambah_Click()
@@ -328,11 +330,20 @@ Private Sub cmdTambah_Click()
             MsgBox "Silahkan Masukan Jumlah Barang yang akan Dibeli", vbInformation, "Informasi"
         End If
     Else
-        totalHarga = totalHarga + (harga * CDbl(txtQty.Text))
-        tambahDaftarBarang comboBarang.Text, txtQty.Text, CDbl(harga)
-        insertTransaksi
-        clear
-        txtTunai.SetFocus
+        Set rsu = New ADODB.Recordset
+        rsu.Open "SELECT stok FROM tb_barang WHERE id = " & selectedIdItem, Conn
+        Dim stokBarang As Integer
+        stokBarang = rsu("stok").Value
+        
+        If stokBarang >= Val(txtQty.Text) Then
+            totalHarga = totalHarga + (harga * CDbl(txtQty.Text))
+            tambahDaftarBarang comboBarang.Text, txtQty.Text, CDbl(harga)
+            insertTransaksi
+            clear
+            txtTunai.SetFocus  
+        Else 
+            MsgBox "Stok Barang Tersisa " & stokBarang & ", Jadi ga bisa!", vbInformation, "Informasi"
+        End If 
     End If
 End Sub
 
@@ -388,6 +399,7 @@ Private Sub Form_Load()
     leftLblQty = 9000
     leftLblHarga = 9840
     leftLblTotalHarga = 12120
+    cmdReset.Enabled = False
     cmdCetak.Enabled = False
 End Sub
 
